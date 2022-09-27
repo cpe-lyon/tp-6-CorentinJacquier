@@ -1,5 +1,5 @@
 
-# 👨‍💻 TP6 - - Services réseau
+# 👨‍💻 TP6 - Services réseau
 
 CPE Lyon - 4ETI, 3IRC & 3ICS - Année 2022/2023 Administration Système
 
@@ -86,7 +86,7 @@ On ajoute les cartes réseaux aux machines sur l'interface Vsphere en cliquant d
 
 On éteint les machines, et on met en place l'environement de commande. 
 
-Avec la commande `ip a` on voit que l'interface `lo` correspond à l'addresse `loopback`  (127.0.0.1/8) pour le local. 
+Avec la commande `ip a` on voit que l'interface `lo` correspond à l'adresse `loopback`  (127.0.0.1/8) pour le local. 
 
 <img src="https://cdn.discordapp.com/attachments/1017478318934724638/1023856617554460723/unknown.png"> 
 
@@ -104,27 +104,91 @@ On installe le paquet  `isc-dhcp-server`, avec la commande `sudo apt install isc
 
 La commande `systemctl status isc-dhcp-server` retourne : `Unit ics-dhcp-server. service could not be found`. 
 
-Dans le dossier `/etc/netplan`, on créer le fichier `01-netcfg.yaml` dans lequel on écrit :
+Dans le dossier `/etc/netplan` du serveur, on écrit dans le fichier `50-cloud-init.yaml` :
 
-network : 
-   version : 2 
-   renderer : networkd 
-   ethernets :
-      ens224 : 
-      addresses : 
-         − 192.168.100.1/24
+network: 
+  version: 2 
+  renderer: networkd 
+  ethernets: 
+    ens192: 
+      dhcp4: true 
+    ense224 
+      adresses: 
+         - 192.168.100.1/24
 
-On fait `sudo netplan try` pour vérifier que la configuration fonctionne. Puis, on fait `sudo netplan apply`  pour l'appliquer. 
+On fait `sudo netplan try` pour vérifier que la configuration fonctionne. Puis, on fait `sudo netplan apply`  pour l'appliquer. Et on active l'interface : `sudo ip link set ens224 up`.
+
+Puis on fait de meme avec le client, avec les données suivantes dans le fichier `50-cloud-init.yaml` :
+
+network: 
+  version: 2 
+  renderer: networkd 
+    ethernets: 
+      ens192 
+      adresses: 
+         - 192.168.100.2/24
 
 D'abord on fait une backup du fichier `dhcp.conf` avec `sudo cp /etc/dhcp/dhcpd.conf /etc/dhcp/dhcpd.conf.bak`.
 
 Ensuite, on fait la configuration du serveur DHCP en éditant le fichier `dhcp.conf` avec : `sudo nano /etc/dhcp/dhcpd.conf`. 
 
-On écrit les paramètres dans le fichier.
+On écrit les paramètres demandés dans le fichier.
 
-Et on modifie également le fichier `/etc/default/isc-dhcp-server` pour donner l'interface à utiliser : ens224.
+Et on modifie également le fichier `/etc/default/isc-dhcp-server` pour donner l'interface à utiliser : `ens224` dans ipV4.
+
+On fait `dhcpd -t` pour vérifier la config :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024210729227780136/unknown.png">
+
+Et le status avec la commande : 
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024210899013210162/unknown.png">
+
+Maintenant sur le client on change le hostname avec `hostnamectl set-hostname client.tpadmin.local --static` . 
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024210596377395200/unknown.png">
+
+On ajoute `optionnal: true` dans le yaml `/etc/netplan` pour rendre le démarage plus rapide du client.
+
+On fait la commande `tail -f /var/log/syslog` :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024215565394522142/unknown.png">
+
+Par exemple DHCPDISCOVER  est la réponse des machines. En effet, on retoruve l'adresse MAC du client.
+
+Le fichier `/var/lib/dhcp/dhcpd.leases` liste toutes les connexions faites du serveur DHCP. 
+
+Et la commande `dhcp-lease-list` affiche la meme liste mais dans le terminal sous forme de tableau :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024218815992713216/unknown.png"> 
+
+On ping le client depuis le serveur : 
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024218304182759514/unknown.png">
+
+Et du client vers le serveur :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024218450429743104/unknown.png">
+
+On fait les modifications suivantes dans le fichier `dhcpd.conf` (sans oublier le 's' à client) :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024221494093549629/unknown.png">
+
+Pour fixer problèmes d'adresse IP et internet du serveur : `sudo dhclient ens192`. 
+
+En suite, on fait `dhcp apply` pour appliquer la nouvelle configuration puis `dhclient -v`.
+
+On restart `isc-dhcp-server` avec `systemctl restart isc-dhcp-server`.d
+
+Le client possède donc l'ip `192.168.100.20/24` :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024230722745159740/unknown.png">
 
 
+## Exercice 4 - Donner un accès à Internet au client
 
+On configure les `iptables` du serveur : 
 
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1024235301872341033/unknown.png">
 
+Puis, on essaye de ping 1.1.1.1 (google) depuis le client en passant par notre serveur dhcp. 
