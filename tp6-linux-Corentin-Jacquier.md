@@ -192,3 +192,58 @@ On configure les `iptables` du serveur :
 <img src="https://cdn.discordapp.com/attachments/750759699942735884/1024235301872341033/unknown.png">
 
 Puis, on essaye de ping 1.1.1.1 (google) depuis le client en passant par notre serveur dhcp. 
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026408053563740160/unknown.png">
+
+## Exercice 5 - Installation du serveur DNS
+
+On installe `bind9` avec apt, et on vérifie qu'il est est bien installé avec `named -v` : 
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026408875081089104/unknown.png">
+
+On edit le fichier de configuration `/etc/bind/named.conf.options.` comme ce qui suit :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026410026224590929/unknown.png">
+
+Puis, on restart le service (avec systmctl). 
+
+Ce quu permet depuis le client de ping `www.google.fr` : 
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026410224246083644/unknown.png">
+
+On installe Lynx avec `sudo apt-get lynx`.
+
+On navigue sur Lynx qui est un navigateur dans le terminal :
+
+<img 
+src="https://cdn.discordapp.com/attachments/750759699942735884/1026411105410613288/unknown.png">
+
+## Exercice 6 - Configuration du serveur DNS pour la zone tpadmin.local
+
+On ajoute dans le fichier `/etc/bind/named.conf.local`, ce qui suit : 
+
+<img src="https://media.discordapp.net/attachments/750759699942735884/1026413295739093023/unknown.png">
+
+On fait un mv de `db.local` vers `db.tpadmin.local`. 
+
+On édite le nouveau fichier, comme ceci : 
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026413975749005342/unknown.png">
+
+On ajoute à la fin du fichier `named.conf.local`, ce qui suit :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026415731295924254/unknown.png">
+
+Ensuite on fait `sudo mv db.127 db.192.168.100`.
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026417231099334656/unknown.png">
+
+Donc, peut faire les commandes demandées afin de vérfier la configuration suivante :
+
+<img src="https://cdn.discordapp.com/attachments/750759699942735884/1026417826887634954/unknown.png">
+
+On est voit bien OK, le dns est bien configuré.
+
+
+
+
